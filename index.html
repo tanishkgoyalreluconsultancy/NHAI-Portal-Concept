@@ -3190,7 +3190,7 @@
             { id: 'kpi', label: 'KPI Reports', icon: 'chart', roles: ['admin', 'rm'], crumb: 'Region & district performance indicators' },
             { id: 'users', label: 'User Management', icon: 'users', roles: ['admin'], crumb: 'Users, roles and region access' },
             { id: 'district', label: 'District Details', icon: 'table', roles: ['admin', 'rm'], crumb: 'District fund position & office detail', hidden: true },
-            { id: 'audit', label: 'Audit Log', icon: 'history', roles: ['admin', 'rm'], crumb: 'Activity trail' }
+            { id: 'audit', label: 'Audit Log', icon: 'history', roles: ['admin'], crumb: 'Activity trail' }
         ];
 
         /* ---------------- app state ---------------- */
@@ -5176,12 +5176,13 @@
 
         /* =========================== AUDIT =========================== */
         function pageAudit() {
+            if (!isAdmin()) { toast('Administrator access required', 'bad'); return navigate('dashboard'); }
             const u = me();
-            let items = DB.audit.filter(a => u.role === 'admin' || !a.regionId || a.regionId === u.regionId || String(a.regionId || '').split(',').includes(u.regionId));
+            let items = DB.audit.slice();
             if (ui.q) items = items.filter(a => norm(a.action + a.detail + a.user).includes(norm(ui.q)));
             $('#page').innerHTML = `
   <div class="card">
-    <div class="card-h"><h3>Activity trail</h3><span class="hint">${items.length} event(s) · ${u.role === 'admin' ? 'all divisions' : 'your division and system events'}</span>
+    <div class="card-h"><h3>Activity trail</h3><span class="hint">${items.length} event(s) · all divisions</span>
       <div class="right"><button class="btn btn-ghost btn-sm" id="aCsv">⤓ Export log (CSV)</button></div></div>
     <div class="tbl-wrap"><table class="tbl">
       <thead><tr><th>Timestamp</th><th>User</th><th>Role</th><th>Action</th><th>Detail</th><th>Division</th></tr></thead>
@@ -5293,7 +5294,7 @@
         let gT; $('#globalSearch').oninput = e => {
             clearTimeout(gT); gT = setTimeout(() => {
                 ui.q = e.target.value; ui.pageNo = 1;
-                if (!['records', 'audit'].includes(ui.page)) navigate('records', { view: 'district' }); else if (ui.page === 'records') pageRecords(); else pageAudit();
+                if (!['records', 'audit'].includes(ui.page)) navigate('records', { view: 'district' }); else if (ui.page === 'records') pageRecords(); else if (ui.page === 'audit') pageAudit();
             }, 300);
         };
         document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#mask').classList.contains('on')) closeModal(); });
